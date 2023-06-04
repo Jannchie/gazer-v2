@@ -1,4 +1,4 @@
-package models
+package gazer
 
 type Task[T any] struct {
 	Key    string `json:"key"`

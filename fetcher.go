@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/jannchie/gazer-v2/common/pool"
+	"github.com/jannchie/gazer-v2/pool"
 )
 
 // GazerFetcher is the client of gazer
@@ -91,7 +91,12 @@ func (f *GazerFetcher[T, R]) Fetch() (*R, error) {
 
 // RPushTask push task to the tail of the queue
 func (f *GazerFetcher[T, R]) Post(raw *R) {
-	data, err := json.Marshal(raw)
+	rawObj := Raw[*R]{
+		Key:       f.key,
+		Raw:       raw,
+		CreatedAt: time.Now().Unix(),
+	}
+	data, err := json.Marshal(rawObj)
 	if err != nil {
 		fmt.Println(err)
 		return

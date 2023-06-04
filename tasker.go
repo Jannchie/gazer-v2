@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/jannchie/gazer-v2/common/models"
 )
 
 // GazerTasker is the client of gazer
@@ -37,7 +36,7 @@ func (t GazerTasker[T]) getFullKey(key string) string {
 }
 
 // RPushTask push task to the tail of the queue
-func (t *GazerTasker[T]) RPushTask(ctx context.Context, task *models.Task[T]) error {
+func (t *GazerTasker[T]) RPushTask(ctx context.Context, task *Task[T]) error {
 	data, err := json.Marshal(task.Params)
 	if err != nil {
 		return err
@@ -46,7 +45,7 @@ func (t *GazerTasker[T]) RPushTask(ctx context.Context, task *models.Task[T]) er
 	return result.Err()
 }
 
-func (t *GazerTasker[T]) RPushTasks(ctx context.Context, tasks []*models.Task[T]) error {
+func (t *GazerTasker[T]) RPushTasks(ctx context.Context, tasks []*Task[T]) error {
 	pipe := t.client.Pipeline()
 	for _, task := range tasks {
 		data, err := json.Marshal(task.Params)
@@ -61,7 +60,7 @@ func (t *GazerTasker[T]) RPushTasks(ctx context.Context, tasks []*models.Task[T]
 }
 
 // LPushTask push task to the head of the queue
-func (t *GazerTasker[T]) LPushTask(ctx context.Context, task *models.Task[T]) error {
+func (t *GazerTasker[T]) LPushTask(ctx context.Context, task *Task[T]) error {
 	result := t.client.LPush(ctx, t.getFullKey(task.Key), task.Params)
 	return result.Err()
 }

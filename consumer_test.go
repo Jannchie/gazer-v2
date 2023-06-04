@@ -6,7 +6,7 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type Result struct {
+type TestResult struct {
 	Data string `json:"data"`
 }
 
@@ -14,11 +14,11 @@ func TestConsumer(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	consumer := NewConsumer[Result](&GazerConsumerOption[Result]{
+	consumer := NewConsumer[TestResult](&GazerConsumerOption[TestResult]{
 		Client: client,
 		Key:    "test",
-		Handler: func(data *Result) error {
-			t.Log("Consume:", data.Data)
+		Handler: func(data *Raw[TestResult]) error {
+			t.Log("Consume:", data.Raw.Data)
 			return nil
 		},
 	})

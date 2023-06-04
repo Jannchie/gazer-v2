@@ -1,4 +1,4 @@
-package models
+package gazer
 
 type Raw[T any] struct {
 	Key       string `json:"key"`

@@ -16,14 +16,14 @@ type GazerConsumer[R any] struct {
 	client  *redis.Client
 	name    string
 	key     string
-	handler func(*R) error
+	handler func(*Raw[R]) error
 }
 
 type GazerConsumerOption[R any] struct {
 	Client  *redis.Client
 	Name    string
 	Key     string
-	Handler func(*R) error
+	Handler func(*Raw[R]) error
 }
 
 func NewConsumer[R any](options *GazerConsumerOption[R]) *GazerConsumer[R] {
@@ -61,7 +61,7 @@ func (c *GazerConsumer[R]) Consume() error {
 	if data == "" {
 		return nil
 	}
-	t := new(R)
+	t := new(Raw[R])
 	err := json.Unmarshal([]byte(data), t)
 	if err != nil {
 		return err

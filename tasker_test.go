@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/jannchie/gazer-v2/common/models"
 )
 
 type Data struct {
@@ -19,7 +18,7 @@ func TestClient(t *testing.T) {
 	client := NewTasker[Data](&GazerTaskerOptions{
 		Client: db,
 	})
-	err := client.RPushTask(context.Background(), &models.Task[Data]{
+	err := client.RPushTask(context.Background(), &Task[Data]{
 		Key:    "test",
 		Params: Data{Name: "This is a test"},
 	})
