@@ -1,4 +1,4 @@
-package fetcher
+package gazer
 
 import (
 	"context"
@@ -18,21 +18,21 @@ type GazerFetcher[T any, R any] struct {
 	client      *redis.Client
 	key         string
 	name        string
-	handler     func(T) (R, error)
+	handler     func(T) (*R, error)
 	concurrency uint32
-	pool        *pool.Pool[T, R]
+	pool        *pool.Pool[T, *R]
 }
 
 type GazerFetcherOptions[T any, R any] struct {
 	Client      *redis.Client
 	Name        string
 	Key         string
-	Handler     func(T) (R, error)
+	Handler     func(T) (*R, error)
 	Concurrency uint32
 }
 
 // New create a new gazer client
-func New[T any, R any](options *GazerFetcherOptions[T, R]) *GazerFetcher[T, R] {
+func NewFetcher[T any, R any](options *GazerFetcherOptions[T, R]) *GazerFetcher[T, R] {
 	if options.Client == nil {
 		panic("Redis Client is nil")
 	}
@@ -52,7 +52,7 @@ func New[T any, R any](options *GazerFetcherOptions[T, R]) *GazerFetcher[T, R] {
 		name:        options.Name,
 		handler:     options.Handler,
 		concurrency: options.Concurrency,
-		pool:        pool.New[T, R](options.Handler, options.Concurrency),
+		pool:        pool.New[T, *R](options.Handler, options.Concurrency),
 	}
 }
 
@@ -86,7 +86,7 @@ func (f *GazerFetcher[T, R]) Fetch() (*R, error) {
 	if res.Err != nil {
 		return nil, res.Err
 	}
-	return &res.Result, nil
+	return res.Result, nil
 }
 
 // RPushTask push task to the tail of the queue

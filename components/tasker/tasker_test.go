@@ -1,4 +1,4 @@
-package tasker
+package gazer
 
 import (
 	"context"
@@ -16,7 +16,7 @@ func TestClient(t *testing.T) {
 	db := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	client := New[Data](&GazerTaskerOptions{
+	client := NewTasker[Data](&GazerTaskerOptions{
 		Client: db,
 	})
 	err := client.RPushTask(context.Background(), &models.Task[Data]{

@@ -1,4 +1,4 @@
-package consumer
+package gazer
 
 import (
 	"context"
@@ -26,7 +26,7 @@ type GazerConsumerOption[R any] struct {
 	Handler func(*R) error
 }
 
-func New[R any](options *GazerConsumerOption[R]) *GazerConsumer[R] {
+func NewConsumer[R any](options *GazerConsumerOption[R]) *GazerConsumer[R] {
 	if options.Client == nil {
 		panic("Redis Client is nil")
 	}

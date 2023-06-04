@@ -1,4 +1,4 @@
-package tasker
+package gazer
 
 import (
 	"context"
@@ -21,7 +21,7 @@ type GazerTaskerOptions struct {
 }
 
 // New create a new gazer client
-func New[T any](options *GazerTaskerOptions) *GazerTasker[T] {
+func NewTasker[T any](options *GazerTaskerOptions) *GazerTasker[T] {
 	if options.Name == "" {
 		options.Name = "gazer"
 	}

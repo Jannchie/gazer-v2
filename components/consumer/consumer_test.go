@@ -1,4 +1,4 @@
-package consumer
+package gazer
 
 import (
 	"testing"
@@ -14,7 +14,7 @@ func TestConsumer(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	consumer := New[Result](&GazerConsumerOption[Result]{
+	consumer := NewConsumer[Result](&GazerConsumerOption[Result]{
 		Client: client,
 		Key:    "test",
 		Handler: func(data *Result) error {

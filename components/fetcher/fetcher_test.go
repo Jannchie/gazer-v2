@@ -1,4 +1,4 @@
-package fetcher
+package gazer
 
 import (
 	"testing"
@@ -18,12 +18,12 @@ func TestFetcher(t *testing.T) {
 	db := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	fetcher := New[Params, Result](&GazerFetcherOptions[Params, Result]{
+	fetcher := NewFetcher[Params, Result](&GazerFetcherOptions[Params, Result]{
 		Client: db,
 		Key:    "test",
-		Handler: func(data Params) (Result, error) {
+		Handler: func(data Params) (*Result, error) {
 			t.Log("Fetch:", data.Name)
-			return Result{Data: data.Name}, nil
+			return &Result{Data: data.Name}, nil
 		}})
 	fetcher.Fetch()
 }
