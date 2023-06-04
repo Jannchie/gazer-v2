@@ -18,9 +18,9 @@ func TestFetcher(t *testing.T) {
 	db := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	fetcher := NewFetcher[Params, Result](&GazerFetcherOptions[Params, Result]{
+	fetcher := NewFetcher[Params, Result](&FetcherOptions[Params, Result]{
 		Client: db,
-		Key:    "test",
+		Key: "test",
 		Handler: func(data Params) (*Result, error) {
 			t.Log("Fetch:", data.Name)
 			return &Result{Data: data.Name}, nil

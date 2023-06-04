@@ -12,21 +12,21 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type GazerConsumer[R any] struct {
+type Consumer[R any] struct {
 	client  *redis.Client
 	name    string
 	key     string
 	handler func(*Raw[R]) error
 }
 
-type GazerConsumerOption[R any] struct {
+type ConsumerOption[R any] struct {
 	Client  *redis.Client
 	Name    string
 	Key     string
 	Handler func(*Raw[R]) error
 }
 
-func NewConsumer[R any](options *GazerConsumerOption[R]) *GazerConsumer[R] {
+func NewConsumer[R any](options *ConsumerOption[R]) *Consumer[R] {
 	if options.Client == nil {
 		panic("Redis Client is nil")
 	}
@@ -36,7 +36,7 @@ func NewConsumer[R any](options *GazerConsumerOption[R]) *GazerConsumer[R] {
 	if options.Name == "" {
 		options.Name = "gazer"
 	}
-	return &GazerConsumer[R]{
+	return &Consumer[R]{
 		client:  options.Client,
 		key:     options.Key,
 		name:    options.Name,
@@ -44,11 +44,11 @@ func NewConsumer[R any](options *GazerConsumerOption[R]) *GazerConsumer[R] {
 	}
 }
 
-func (c GazerConsumer[R]) getFullKey(key string) string {
+func (c Consumer[R]) getFullKey(key string) string {
 	return c.name + ":raws:" + key
 }
 
-func (c *GazerConsumer[R]) Consume() error {
+func (c *Consumer[R]) Consume() error {
 	result := c.client.LPop(context.Background(), c.getFullKey(c.key))
 	if result.Err() != nil {
 		if result.Err().Error() == "redis: nil" {
@@ -74,7 +74,7 @@ func (c *GazerConsumer[R]) Consume() error {
 }
 
 // Run run the fetcher
-func (c *GazerConsumer[R]) Run() {
+func (c *Consumer[R]) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {

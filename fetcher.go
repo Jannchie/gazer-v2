@@ -10,20 +10,19 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/jannchie/gazer-v2/pool"
+	"golang.org/x/sync/semaphore"
 )
 
-// GazerFetcher is the client of gazer
-type GazerFetcher[T any, R any] struct {
+// Fetcher is the client of gazer
+type Fetcher[T any, R any] struct {
 	client      *redis.Client
 	key         string
 	name        string
 	handler     func(T) (*R, error)
 	concurrency uint32
-	pool        *pool.Pool[T, *R]
 }
 
-type GazerFetcherOptions[T any, R any] struct {
+type FetcherOptions[T any, R any] struct {
 	Client      *redis.Client
 	Name        string
 	Key         string
@@ -32,7 +31,7 @@ type GazerFetcherOptions[T any, R any] struct {
 }
 
 // New create a new gazer client
-func NewFetcher[T any, R any](options *GazerFetcherOptions[T, R]) *GazerFetcher[T, R] {
+func NewFetcher[T any, R any](options *FetcherOptions[T, R]) *Fetcher[T, R] {
 	if options.Client == nil {
 		panic("Redis Client is nil")
 	}
@@ -46,27 +45,26 @@ func NewFetcher[T any, R any](options *GazerFetcherOptions[T, R]) *GazerFetcher[
 		options.Concurrency = 8
 	}
 
-	return &GazerFetcher[T, R]{
+	return &Fetcher[T, R]{
 		client:      options.Client,
 		key:         options.Key,
 		name:        options.Name,
 		handler:     options.Handler,
 		concurrency: options.Concurrency,
-		pool:        pool.New[T, *R](options.Handler, options.Concurrency),
 	}
 }
 
 // getFullRawKey get the full key of the task
-func (f GazerFetcher[T, R]) getFullRawKey(key string) string {
+func (f Fetcher[T, R]) getFullRawKey(key string) string {
 	return f.name + ":raws:" + key
 }
 
-func (f GazerFetcher[T, R]) getFullTaskKey(key string) string {
+func (f Fetcher[T, R]) getFullTaskKey(key string) string {
 	return f.name + ":tasks:" + key
 }
 
-func (f *GazerFetcher[T, R]) Fetch() (*R, error) {
-	result := f.client.LPop(context.Background(), f.key)
+func (f *Fetcher[T, R]) Fetch() (*R, error) {
+	result := f.client.LPop(context.Background(), f.getFullTaskKey(f.key))
 	if result.Err() != nil {
 		if result.Err().Error() == "redis: nil" {
 			<-time.After(time.Second)
@@ -81,16 +79,15 @@ func (f *GazerFetcher[T, R]) Fetch() (*R, error) {
 	if err != nil {
 		return nil, err
 	}
-	f.pool.Dispatch(*t)
-	res := <-f.pool.Results()
-	if res.Err != nil {
-		return nil, res.Err
+	res, err := f.handler(*t)
+	if err != nil {
+		return nil, err
 	}
-	return res.Result, nil
+	return res, nil
 }
 
 // RPushTask push task to the tail of the queue
-func (f *GazerFetcher[T, R]) Post(raw *R) {
+func (f *Fetcher[T, R]) Post(raw *R) {
 	rawObj := Raw[*R]{
 		Key:       f.key,
 		Raw:       raw,
@@ -108,24 +105,31 @@ func (f *GazerFetcher[T, R]) Post(raw *R) {
 }
 
 // Run run the fetcher
-func (f *GazerFetcher[T, R]) Run() {
-	f.pool.Start()
+func (f *Fetcher[T, R]) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	sem := semaphore.NewWeighted(int64(f.concurrency))
 	go func() {
 		for {
 			select {
 			case <-stop:
 				return
 			default:
-				res, err := f.Fetch()
-				if err != nil {
+				if err := sem.Acquire(context.Background(), 1); err != nil {
 					fmt.Println(err)
 					continue
 				}
-				if res != nil {
-					f.Post(res)
-				}
+				go func() {
+					defer sem.Release(1)
+					res, err := f.Fetch()
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+					if res != nil {
+						f.Post(res)
+					}
+				}()
 			}
 		}
 	}()

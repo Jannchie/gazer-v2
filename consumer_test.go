@@ -14,7 +14,7 @@ func TestConsumer(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	consumer := NewConsumer[TestResult](&GazerConsumerOption[TestResult]{
+	consumer := NewConsumer[TestResult](&ConsumerOption[TestResult]{
 		Client: client,
 		Key:    "test",
 		Handler: func(data *Raw[TestResult]) error {
